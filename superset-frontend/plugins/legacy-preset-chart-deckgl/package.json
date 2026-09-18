@@ -36,8 +36,8 @@
     "@luma.gl/engine": "~9.2.6",
     "@luma.gl/shadertools": "~9.2.6",
     "@luma.gl/webgl": "~9.2.6",
-    "@mapbox/tiny-sdf": "^2.0.7",
     "@mapbox/geojson-extent": "^1.0.1",
+    "@mapbox/tiny-sdf": "^2.0.7",
     "@math.gl/web-mercator": "^4.1.0",
     "@types/d3-array": "^3.2.2",
     "@types/geojson": "^7946.0.16",
@@ -68,7 +68,7 @@
     "mapbox-gl": "*",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-map-gl": "^6.1.19"
+    "react-map-gl": "^8.1.3"
   },
   "publishConfig": {
     "access": "public"
