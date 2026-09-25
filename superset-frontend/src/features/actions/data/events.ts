@@ -79,7 +79,11 @@ export const fetchEvents = async (
     });
     return (json as BackendEventDefinition[]).map(toEventRecord);
   } catch (response) {
-    await reportError(response, addDangerToast, t('Error while fetching events'));
+    await reportError(
+      response,
+      addDangerToast,
+      t('Error while fetching incidents'),
+    );
     return [];
   }
 };
@@ -110,7 +114,11 @@ export const createEvent = async (
     });
     return toEventRecord(json as BackendEventDefinition);
   } catch (response) {
-    await reportError(response, addDangerToast, t('Error while creating event'));
+    await reportError(
+      response,
+      addDangerToast,
+      t('Error while creating incident'),
+    );
     return null;
   }
 };
@@ -128,7 +136,11 @@ export const updateEvent = async (
     });
     return toEventRecord(json as BackendEventDefinition);
   } catch (response) {
-    await reportError(response, addDangerToast, t('Error while updating event'));
+    await reportError(
+      response,
+      addDangerToast,
+      t('Error while updating incident'),
+    );
     return null;
   }
 };
@@ -138,10 +150,17 @@ export const deleteEvent = async (
   addDangerToast: (message: string) => void,
 ): Promise<boolean> => {
   try {
-    await SupersetClient.delete({ ...CROSS_ORIGIN, endpoint: `/api/v1/events/${id}` });
+    await SupersetClient.delete({
+      ...CROSS_ORIGIN,
+      endpoint: `/api/v1/events/${id}`,
+    });
     return true;
   } catch (response) {
-    await reportError(response, addDangerToast, t('Error while deleting event'));
+    await reportError(
+      response,
+      addDangerToast,
+      t('Error while deleting incident'),
+    );
     return false;
   }
 };

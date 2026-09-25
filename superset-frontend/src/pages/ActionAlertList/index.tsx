@@ -87,7 +87,9 @@ function ActionAlertList({
         setModalOpen(false);
         setAlertBeingEdited(null);
         refreshData();
-        addSuccessToast(alertBeingEdited ? t('Alert updated') : t('Alert created'));
+        addSuccessToast(
+          alertBeingEdited ? t('Alert updated') : t('Alert created'),
+        );
       });
     },
     [alertBeingEdited, refreshData, addSuccessToast, addDangerToast],
@@ -133,13 +135,10 @@ function ActionAlertList({
         size: 'md',
       },
       {
-        Cell: ({
-          row: { original },
-        }: {
-          row: { original: AlertRuleRecord };
-        }) => original.event_definition_name ?? '',
+        Cell: ({ row: { original } }: { row: { original: AlertRuleRecord } }) =>
+          original.event_definition_name ?? '',
         accessor: 'event_definition_name',
-        Header: t('Event'),
+        Header: t('Incident'),
         id: 'event_definition_name',
         size: 'lg',
       },
@@ -163,7 +162,7 @@ function ActionAlertList({
           row: { original },
         }: {
           row: { original: AlertRuleRecord };
-        }) => (original.notify ? original.recipient_name ?? '' : ''),
+        }) => (original.notify ? (original.recipient_name ?? '') : ''),
         accessor: 'recipient_name',
         Header: t('Recipient'),
         id: 'recipient_name',

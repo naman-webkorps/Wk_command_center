@@ -33,7 +33,7 @@ export const actionMenuData = {
     },
     {
       name: 'Event',
-      label: t('Event'),
+      label: t('Incident'),
       url: ACTION_EVENT_PATH,
       usesRouter: true,
     },

@@ -464,7 +464,7 @@ export default function MenuWrapper({ data, ...rest }: MenuProps) {
           label: t('Integration'),
           url: ACTION_INTEGRATION_PATH,
         },
-        { name: 'Event', label: t('Event'), url: ACTION_EVENT_PATH },
+        { name: 'Event', label: t('Incident'), url: ACTION_EVENT_PATH },
         { name: 'Alert', label: t('Alert'), url: ACTION_ALERT_PATH },
       ],
     };

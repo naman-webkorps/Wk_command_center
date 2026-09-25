@@ -27,7 +27,11 @@ import { EventRecord } from './data/types';
 interface EventModalProps {
   show: boolean;
   onHide: () => void;
-  onSave: (input: { name: string; groupId: string; eventTypeId: string }) => void;
+  onSave: (input: {
+    name: string;
+    groupId: string;
+    eventTypeId: string;
+  }) => void;
   /** When set, the modal edits this event instead of creating a new one. */
   event?: EventRecord | null;
 }
@@ -91,7 +95,7 @@ export default function EventModal({
       title={
         <ModalTitleWithIcon
           isEditMode={isEditMode}
-          title={isEditMode ? t('Edit Event') : t('Create Event')}
+          title={isEditMode ? t('Edit Incident') : t('Create Incident')}
           data-test="event-modal-title"
         />
       }
@@ -126,11 +130,11 @@ export default function EventModal({
       </FieldContainer>
       <FieldContainer>
         <div className="control-label">
-          {t('Events')}
+          {t('Incidents')}
           <span className="required">*</span>
         </div>
         <Select
-          ariaLabel={t('Events')}
+          ariaLabel={t('Incidents')}
           disabled={!groupId}
           placeholder={groupId ? undefined : t('Select a Group first')}
           options={eventTypeOptions.map(eventType => ({

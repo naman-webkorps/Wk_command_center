@@ -84,7 +84,9 @@ function EventList({ addDangerToast, addSuccessToast }: EventListProps) {
         setModalOpen(false);
         setEventBeingEdited(null);
         refreshData();
-        addSuccessToast(eventBeingEdited ? t('Event updated') : t('Event created'));
+        addSuccessToast(
+          eventBeingEdited ? t('Incident updated') : t('Incident created'),
+        );
       });
     },
     [eventBeingEdited, refreshData, addSuccessToast, addDangerToast],
@@ -116,7 +118,7 @@ function EventList({ addDangerToast, addSuccessToast }: EventListProps) {
           findEventTypeOption(original.eventTypeId)?.label ??
           original.eventTypeId,
         accessor: 'eventTypeId',
-        Header: t('Event'),
+        Header: t('Incident'),
         id: 'eventTypeId',
         size: 'lg',
       },
@@ -131,7 +133,7 @@ function EventList({ addDangerToast, addSuccessToast }: EventListProps) {
           const actions: ListViewActionProps[] = [
             {
               label: 'edit-action',
-              tooltip: t('Edit event'),
+              tooltip: t('Edit incident'),
               placement: 'bottom',
               icon: 'EditOutlined',
               onClick: () => {
@@ -142,7 +144,7 @@ function EventList({ addDangerToast, addSuccessToast }: EventListProps) {
             },
             {
               label: 'delete-action',
-              tooltip: t('Delete event'),
+              tooltip: t('Delete incident'),
               placement: 'bottom',
               icon: 'DeleteOutlined',
               onClick: () => setEventCurrentlyDeleting(original),
@@ -187,13 +189,13 @@ function EventList({ addDangerToast, addSuccessToast }: EventListProps) {
   return (
     <>
       <SubMenu
-        name={t('Events')}
+        name={t('Incidents')}
         activeChild="Event"
         tabs={actionMenuData.tabs}
         buttons={[
           {
             icon: <Icons.PlusOutlined iconSize="m" />,
-            name: t('Event'),
+            name: t('Incident'),
             onClick: () => {
               setEventBeingEdited(null);
               setModalInstanceKey(key => key + 1);
@@ -216,7 +218,7 @@ function EventList({ addDangerToast, addSuccessToast }: EventListProps) {
       {eventCurrentlyDeleting && (
         <DeleteModal
           description={t(
-            'This will permanently remove this event. This action cannot be undone.',
+            'This will permanently remove this incident. This action cannot be undone.',
           )}
           onConfirm={handleDeleteConfirm}
           onHide={() => setEventCurrentlyDeleting(null)}
