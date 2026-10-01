@@ -97,7 +97,7 @@ ENABLE_PROXY_FIX = False
 TALISMAN_ENABLED = True
 
 # --- Branding: Webkorps Command Central ---
-_BRAND_NAME = "Command Central"
+_BRAND_NAME = "Command Center"
 _BRAND_LOGO_PATH = "/static/assets/images/command-central-logo.png"
 # White-on-transparent variant for the green header bar - APP_ICON/FAVICONS
 # below deliberately keep the original (a white icon would be invisible in

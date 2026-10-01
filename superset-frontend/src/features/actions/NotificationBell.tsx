@@ -182,7 +182,8 @@ const incidentSummary = (incident: IncidentCard) =>
   [
     incident.vehicle,
     incident.route ?? incident.hub,
-    incident.delay_minutes != null ? `+${incident.delay_minutes} min` : null,
+    // Hours-converted on the backend (90 min -> "+1.5 hours").
+    incident.delay_label ?? null,
     incident.waybill_count != null
       ? `${incident.waybill_count} waybills`
       : null,

@@ -66,6 +66,8 @@ export interface IncidentCard {
   hub?: string | null;
   destination?: string | null;
   delay_minutes?: number | null;
+  /** delay_minutes formatted for display: "+45 min", "+1.5 hours". */
+  delay_label?: string | null;
   waybill_count?: number | null;
   order_count?: number | null;
   revenue_risk?: number | null;

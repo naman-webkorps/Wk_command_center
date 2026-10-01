@@ -350,52 +350,52 @@ export function Menu({
       children: childItems,
     };
   };
-  const renderBrand = () => {
-    let link;
-    if (theme.brandLogoUrl) {
-      link = (
-        <StyledBrandWrapper margin={theme.brandLogoMargin}>
-          <StyledBrandLink href={ensureAppRoot(theme.brandLogoHref)}>
-            <StyledImage
-              preview={false}
-              src={ensureStaticPrefix(theme.brandLogoUrl)}
-              alt={theme.brandLogoAlt || 'Apache Superset'}
-              height={theme.brandLogoHeight}
-            />
-          </StyledBrandLink>
-        </StyledBrandWrapper>
-      );
-    } else if (isFrontendRoute(window.location.pathname)) {
-      // ---------------------------------------------------------------------------------
-      // TODO: deprecate this once Theme is fully rolled out
-      // Kept as is for backwards compatibility with the old theme system / superset_config.py
-      link = (
-        <GenericLink className="navbar-brand" to={brand.path}>
-          <StyledImage
-            preview={false}
-            src={ensureStaticPrefix(brand.icon)}
-            alt={brand.alt}
-          />
-        </GenericLink>
-      );
-    } else {
-      link = (
-        <Typography.Link
-          className="navbar-brand"
-          href={ensureAppRoot(brand.path)}
-          tabIndex={-1}
-        >
-          <StyledImage
-            preview={false}
-            src={ensureStaticPrefix(brand.icon)}
-            alt={brand.alt}
-          />
-        </Typography.Link>
-      );
-    }
-    // ---------------------------------------------------------------------------------
-    return <>{link}</>;
-  };
+  // const renderBrand = () => {
+  //   let link;
+  //   if (theme.brandLogoUrl) {
+  //     link = (
+  //       <StyledBrandWrapper margin={theme.brandLogoMargin}>
+  //         <StyledBrandLink href={ensureAppRoot(theme.brandLogoHref)}>
+  //           <StyledImage
+  //             preview={false}
+  //             src={ensureStaticPrefix(theme.brandLogoUrl)}
+  //             alt={theme.brandLogoAlt || 'Apache Superset'}
+  //             height={theme.brandLogoHeight}
+  //           />
+  //         </StyledBrandLink>
+  //       </StyledBrandWrapper>
+  //     );
+  //   } else if (isFrontendRoute(window.location.pathname)) {
+  //     // ---------------------------------------------------------------------------------
+  //     // TODO: deprecate this once Theme is fully rolled out
+  //     // Kept as is for backwards compatibility with the old theme system / superset_config.py
+  //     link = (
+  //       <GenericLink className="navbar-brand" to={brand.path}>
+  //         <StyledImage
+  //           preview={false}
+  //           src={ensureStaticPrefix(brand.icon)}
+  //           alt={brand.alt}
+  //         />
+  //       </GenericLink>
+  //     );
+  //   } else {
+  //     link = (
+  //       <Typography.Link
+  //         className="navbar-brand"
+  //         href={ensureAppRoot(brand.path)}
+  //         tabIndex={-1}
+  //       >
+  //         <StyledImage
+  //           preview={false}
+  //           src={ensureStaticPrefix(brand.icon)}
+  //           alt={brand.alt}
+  //         />
+  //       </Typography.Link>
+  //     );
+  //   }
+  //   // ---------------------------------------------------------------------------------
+  //   return <>{link}</>;
+  // };
   return (
     <StyledHeader className="top" id="main-menu" role="navigation">
       <StyledRow>
@@ -406,7 +406,7 @@ export function Menu({
             title={brand.tooltip}
             arrow={{ pointAtCenter: true }}
           >
-            {renderBrand()}
+            {/* {renderBrand()} */}
           </Tooltip>
           {brand.text && (
             <StyledBrandText>
@@ -504,7 +504,7 @@ export default function MenuWrapper({ data, ...rest }: MenuProps) {
   // gate it the same way RightMenu.tsx gates its own items.
   if (!newMenuData.navbar_right.user_is_anonymous) {
     const actionMenuItem: MenuObjectProps = {
-      name: 'Action',
+      name: 'Actions',
       label: t('Action'),
       childs: [
         {

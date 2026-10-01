@@ -18,4 +18,4 @@
  */
 
 // Single source of truth for the "View Map" header button's destination.
-export const VIEW_MAP_URL = 'http://182.156.33.77:9010/';
+export const VIEW_MAP_URL = 'http://localhost:4173/';
