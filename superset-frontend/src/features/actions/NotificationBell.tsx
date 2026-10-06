@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { t } from '@apache-superset/core/translation';
@@ -27,14 +27,29 @@ import { addDangerToast } from 'src/components/MessageToasts/actions';
 import { UserWithPermissionsAndRoles } from 'src/types/bootstrapTypes';
 import {
   fetchNotifications,
-  fetchUnreadNotifications,
-  fetchSseTicket,
   markNotificationRead,
   markAllNotificationsRead,
-  notificationStreamUrl,
+  NotificationPollCursor,
   NotificationRecord,
+  pollNotifications,
 } from './data/notifications';
 import { IncidentCard, INCIDENT_UPDATE_EVENT } from './data/incidents';
+
+// Polling cadence. Each poll is one short request that returns at once -
+// nothing is held open between polls, however many tabs are open.
+const VISIBLE_POLL_MS = 12_000;
+const HIDDEN_POLL_MS = 45_000;
+const MAX_BACKOFF_MS = 5 * 60_000;
+
+/** Newest-first list with `incoming` (oldest-first) added, no duplicates. */
+const mergeNew = (
+  current: NotificationRecord[],
+  incoming: NotificationRecord[],
+) => {
+  const known = new Set(current.map(item => item.id));
+  const fresh = incoming.filter(item => !known.has(item.id)).reverse();
+  return fresh.length ? [...fresh, ...current] : current;
+};
 
 const FloatingWrapper = styled.div`
   ${({ theme }) => `
@@ -218,104 +233,96 @@ export default function NotificationBell() {
   const [visible, setVisible] = useState(false);
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
-  // Initial unread notifications + count, and the realtime SSE connection.
-  // Missed-during-disconnect notifications are recovered simply by this
-  // unread fetch running again on remount/reconnect - the durable source
-  // of truth is always the backend, never anything buffered client-side
-  // only in this effect.
+  // In-app delivery by short polling of persisted notifications (the
+  // Notification table is the source of truth). First poll: unread list +
+  // cursor; then only notifications newer than the cursor and incident
+  // status changes since the last poll. Every 12s while visible, 45s while
+  // hidden, immediately on becoming visible; one request in flight at a
+  // time; quiet exponential backoff on errors.
   useEffect(() => {
     if (!userId) return undefined;
-
-    fetchUnreadNotifications(userId, danger).then(items => {
-      setNotifications(items);
-      setUnreadCount(items.length);
-    });
+    const pollUserId: number = userId;
 
     let cancelled = false;
-    let reconnectAttempts = 0;
-    const maxReconnectAttempts = 5;
-    const baseReconnectDelay = 1000; // Start at 1s, exponential backoff
+    let inFlight = false;
+    let failures = 0;
+    let visiblePollMs = VISIBLE_POLL_MS;
+    let cursor: NotificationPollCursor | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
-    const connectStream = async () => {
-      if (cancelled) return;
-
-      try {
-        const ticket = await fetchSseTicket(userId, danger);
-        if (!ticket || cancelled) return;
-
-        reconnectAttempts = 0; // Reset on successful connection
-        const source = new EventSource(notificationStreamUrl(ticket));
-        eventSourceRef.current = source;
-
-        source.addEventListener('notification', (event: MessageEvent) => {
-          const notification = JSON.parse(event.data) as NotificationRecord;
-          setNotifications(prev => [notification, ...prev]);
-          setUnreadCount(prev => prev + 1);
-        });
-
-        // Status/assignment changes made by anyone (in-app or from a Slack
-        // link): refresh matching items and let an open incident page
-        // reload - over this same stream, no second connection.
-        source.addEventListener('incident_update', (event: MessageEvent) => {
-          const update = JSON.parse(event.data) as {
-            alert_id: number;
-            incident: IncidentCard | null;
-          };
-          setNotifications(prev =>
-            prev.map(item =>
-              item.alert_id === update.alert_id
-                ? { ...item, incident: update.incident }
-                : item,
-            ),
-          );
-          window.dispatchEvent(
-            new CustomEvent(INCIDENT_UPDATE_EVENT, { detail: update }),
-          );
-        });
-
-        source.addEventListener('error', () => {
-          // EventSource error - likely 401 from expired ticket or network error
-          source.close();
-          eventSourceRef.current = null;
-
-          if (!cancelled) {
-            // Exponential backoff: 1s, 2s, 4s, 8s, 16s, then stop retrying
-            const delay = Math.min(
-              baseReconnectDelay * Math.pow(2, reconnectAttempts),
-              30000, // Cap at 30s
-            );
-            reconnectAttempts += 1;
-
-            if (reconnectAttempts <= maxReconnectAttempts) {
-              setTimeout(connectStream, delay);
-            }
-          }
-        });
-      } catch (error) {
-        // Error fetching ticket - don't retry, rely on normal effect re-run
-        if (!cancelled) {
-          reconnectAttempts += 1;
-          if (reconnectAttempts <= maxReconnectAttempts) {
-            const delay = Math.min(
-              baseReconnectDelay * Math.pow(2, reconnectAttempts),
-              30000,
-            );
-            setTimeout(connectStream, delay);
-          }
-        }
-      }
+    const nextDelay = () => {
+      const base = document.hidden ? HIDDEN_POLL_MS : visiblePollMs;
+      return Math.min(base * 2 ** failures, MAX_BACKOFF_MS);
     };
 
-    connectStream();
+    const schedule = (delay: number) => {
+      clearTimeout(timer);
+      if (!cancelled) timer = setTimeout(tick, delay);
+    };
+
+    async function tick() {
+      if (cancelled || inFlight) return;
+      inFlight = true;
+      const result = await pollNotifications(pollUserId, cursor);
+      inFlight = false;
+      if (cancelled) return;
+      if (!result) {
+        failures = Math.min(failures + 1, 5);
+        schedule(nextDelay());
+        return;
+      }
+
+      failures = 0;
+      const bootstrap = cursor === null;
+      ({ cursor } = result);
+      if (
+        result.poll_interval_seconds >= 10 &&
+        result.poll_interval_seconds <= 15
+      ) {
+        visiblePollMs = result.poll_interval_seconds * 1000;
+      }
+      setUnreadCount(result.unread_count);
+      if (bootstrap) {
+        setNotifications(result.notifications);
+      } else if (result.notifications.length) {
+        setNotifications(prev => mergeNew(prev, result.notifications));
+      }
+      if (result.incident_updates.length) {
+        const cards = new Map(
+          result.incident_updates.map(update => [update.alert_id, update]),
+        );
+        setNotifications(prev =>
+          prev.map(item =>
+            cards.has(item.alert_id)
+              ? { ...item, incident: cards.get(item.alert_id)!.incident }
+              : item,
+          ),
+        );
+        // Lets an open incident page reload (see IncidentPanel).
+        result.incident_updates.forEach(update =>
+          window.dispatchEvent(
+            new CustomEvent(INCIDENT_UPDATE_EVENT, { detail: update }),
+          ),
+        );
+      }
+      // A burst larger than one page: fetch the rest right away.
+      schedule(result.has_more ? 0 : nextDelay());
+    }
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) schedule(0);
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    tick();
 
     return () => {
       cancelled = true;
-      eventSourceRef.current?.close();
-      eventSourceRef.current = null;
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [userId, danger]);
+  }, [userId]);
 
   const handleVisibleChange = (nextVisible: boolean) => {
     setVisible(nextVisible);

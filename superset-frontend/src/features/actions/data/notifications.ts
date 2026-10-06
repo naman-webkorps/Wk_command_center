@@ -19,7 +19,7 @@
 import { t } from '@apache-superset/core/translation';
 import { SupersetClient, getClientErrorObject } from '@superset-ui/core';
 import type { IncidentCard } from './incidents';
-import { COMMAND_CENTER_API_HOST, CROSS_ORIGIN } from './commandCenterHost';
+import { CROSS_ORIGIN } from './commandCenterHost';
 
 // See ./commandCenterHost for why this is needed, where the host comes
 // from, and how to switch it at runtime.
@@ -175,32 +175,47 @@ export const markAllNotificationsRead = async (
   return results.every(result => result !== null);
 };
 
+/** Where the next poll continues from (both values come from the server). */
+export interface NotificationPollCursor {
+  after_id: number;
+  since: string;
+}
+
+export interface NotificationPollResult {
+  notifications: NotificationRecord[];
+  incident_updates: {
+    alert_id: number;
+    status: string;
+    incident: IncidentCard | null;
+  }[];
+  unread_count: number;
+  has_more: boolean;
+  cursor: NotificationPollCursor;
+  poll_interval_seconds: number;
+}
+
 /**
- * A short-lived signed ticket for the SSE connection only - EventSource
- * cannot send the X-Superset-User-Id header the other endpoints use, so
- * this exchanges a normal (header-authenticated) request for an opaque,
- * time-limited ticket instead of putting the raw user id in a URL.
+ * One short, bounded poll of persisted in-app notifications (the delivery
+ * transport - there is no long-lived connection). Without a cursor it
+ * returns the unread list and a cursor; with one, only notifications
+ * newer than `after_id` plus incident status changes since `since`.
+ * Errors are not toasted: polling retries quietly on its next tick.
  */
-export const fetchSseTicket = async (
+export const pollNotifications = async (
   userId: number,
-  addDangerToast: (message: string) => void,
-): Promise<string | null> => {
+  cursor: NotificationPollCursor | null,
+): Promise<NotificationPollResult | null> => {
+  const query = cursor
+    ? `?after_id=${cursor.after_id}&since=${encodeURIComponent(cursor.since)}`
+    : '';
   try {
     const { json } = await SupersetClient.get({
       ...CROSS_ORIGIN,
-      endpoint: '/api/v1/notifications/sse-ticket',
+      endpoint: `/api/v1/notifications/poll${query}`,
       headers: identityHeaders(userId),
     });
-    return (json as { ticket: string }).ticket;
-  } catch (response) {
-    await reportError(
-      response,
-      addDangerToast,
-      t('Error while connecting to notification stream'),
-    );
+    return json as NotificationPollResult;
+  } catch {
     return null;
   }
 };
-
-export const notificationStreamUrl = (ticket: string): string =>
-  `http://${COMMAND_CENTER_API_HOST}/api/v1/notifications/stream?ticket=${encodeURIComponent(ticket)}`;
