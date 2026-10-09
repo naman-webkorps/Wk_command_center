@@ -242,3 +242,11 @@ COMMAND_CENTER_API_URL = _COMMAND_CENTER_API_ORIGIN
 # Set COMMAND_CENTER_SERVICE_TOKEN in the environment on both sides; never
 # commit a value here.
 COMMAND_CENTER_SERVICE_TOKEN = os.environ.get("COMMAND_CENTER_SERVICE_TOKEN")
+
+# --- Feature flags ---
+# Merged over superset.config.DEFAULT_FEATURE_FLAGS, so only overrides go here.
+FEATURE_FLAGS = {
+    # Dashboards open with the "Filters and controls" sidebar collapsed;
+    # users expand it with the sidebar toggle (or ?expand_filters=1).
+    "FILTERBAR_CLOSED_BY_DEFAULT": True,
+}
