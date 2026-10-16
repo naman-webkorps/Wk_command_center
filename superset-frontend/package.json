@@ -363,7 +363,7 @@
     "terser-webpack-plugin": "^5.3.17",
     "ts-jest": "^29.4.6",
     "tscw-config": "^1.1.2",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.15",
     "typescript": "5.4.5",
     "unzipper": "^0.12.3",
     "vm-browserify": "^1.1.2",
